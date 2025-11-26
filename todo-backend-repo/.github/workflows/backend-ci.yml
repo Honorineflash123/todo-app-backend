@@ -1,0 +1,62 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  REPO_NAME: primus-capstone-backend
+  NAMESPACE: primus-capstone
+  DEPLOYMENT_NAME: todo-backend-deployment
+  CONTAINER_NAME: todo-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Build Backend Image
+        run: |
+          docker build -t $ECR_REGISTRY/$REPO_NAME:${IMAGE_TAG} .
+          docker tag $ECR_REGISTRY/$REPO_NAME:${IMAGE_TAG} $ECR_REGISTRY/$REPO_NAME:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push $ECR_REGISTRY/$REPO_NAME:${IMAGE_TAG}
+          docker push $ECR_REGISTRY/$REPO_NAME:latest
+
+      - name: Setup kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > ~/.kube/config
+
+      - name: Update Backend Deployment Image
+        run: |
+          kubectl set image deployment/$DEPLOYMENT_NAME \
+            $CONTAINER_NAME=$ECR_REGISTRY/$REPO_NAME:${IMAGE_TAG} \
+            -n $NAMESPACE
+
+      - name: Wait for Rollout
+        run: kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+
+      - name: Show Pods
+        run: kubectl get pods -n $NAMESPACE -o wide
