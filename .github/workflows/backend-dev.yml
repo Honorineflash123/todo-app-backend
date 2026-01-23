@@ -2,11 +2,11 @@ name: Backend CI (dev)
 
 on:
   push:
-    branches: ["dev"]
+    branches: [ "dev" ]
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}   # e.g. 696923547072.dkr.ecr.eu-north-1.amazonaws.com
   ECR_REPOSITORY: primus-capstone-backend
   IMAGE_TAG: dev
 
@@ -17,6 +17,13 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Debug - show repo files
+        run: |
+          pwd
+          ls -la
+          ls -la .github/workflows || true
+          test -f Dockerfile && echo "✅ Dockerfile found" || (echo "❌ Dockerfile NOT found" && exit 1)
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -30,11 +37,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            .
+          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
 
       - name: Push Docker image to ECR
         run: |
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
