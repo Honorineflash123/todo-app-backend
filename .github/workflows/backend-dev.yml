@@ -2,11 +2,10 @@ name: Backend CI (dev)
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: ["dev"]
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}   # e.g. 696923547072.dkr.ecr.eu-north-1.amazonaws.com
   ECR_REPOSITORY: primus-capstone-backend
   IMAGE_TAG: dev
 
@@ -18,19 +17,27 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Debug - show repo files
-        run: |
-          pwd
-          ls -la
-          ls -la .github/workflows || true
-          test -f Dockerfile && echo "✅ Dockerfile found" || (echo "❌ Dockerfile NOT found" && exit 1)
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set ECR registry (auto)
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com" >> $GITHUB_ENV
+          echo "✅ Using registry: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+      - name: Debug - show repo files
+        run: |
+          pwd
+          ls -la
+          test -f Dockerfile && echo "✅ Dockerfile found" || (echo "❌ Dockerfile NOT found" && exit 1)
+          echo "ECR_REGISTRY=$ECR_REGISTRY"
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
+          echo "IMAGE_TAG=$IMAGE_TAG"
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
