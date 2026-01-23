@@ -1,1 +1,28 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: todo-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: .
+    container_name: todo-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/todo_db
+    depends_on:
+      - mongo
+
+volumes:
+  mongo_data:
 
