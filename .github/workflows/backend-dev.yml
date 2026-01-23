@@ -1,9 +1,9 @@
+cat > .github/workflows/backend-dev.yml <<'YAML'
 name: Backend CI (dev)
 
 on:
   push:
-    branches:
-      - dev
+    branches: [ "dev" ]
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -14,7 +14,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -30,10 +29,9 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        run: docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}" .
 
       - name: Push Docker image to ECR
-        run: |
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        run: docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+YAML
 
