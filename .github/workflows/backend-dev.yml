@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: eu-north-1
-  ECR_REPOSITORY: primus-capstone-backend
+  ECR_REPOSITORY: todo-backend
   IMAGE_TAG: dev
 
 jobs:
@@ -31,11 +31,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            .
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
 
       - name: Push Docker image to ECR
         run: |
-          docker push \
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
